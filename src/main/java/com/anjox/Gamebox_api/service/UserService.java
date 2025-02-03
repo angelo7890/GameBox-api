@@ -18,7 +18,6 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-
     public UserEntity createUser (RequestRegisterUserDto dto){
         VerifyUsernameOrEmailIfExists(dto.name(), dto.email());
         validationPassword(dto.password());
@@ -37,6 +36,10 @@ public class UserService {
 
     public List<UserEntity> findAll(){
         return userRepository.findAll();
+    }
+
+    public void deleteById (Long id){
+        userRepository.deleteById(id);
     }
 
     private void VerifyUsernameOrEmailIfExists (String username , String email){

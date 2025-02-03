@@ -1,13 +1,12 @@
 package com.anjox.Gamebox_api.controller;
 
 
+import com.anjox.Gamebox_api.dto.RequestCreateGameDto;
 import com.anjox.Gamebox_api.dto.ResponseUrlPictureDto;
 import com.anjox.Gamebox_api.service.GameService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
@@ -19,10 +18,35 @@ public class GameController {
         this.gameService = gameService;
     }
 
-    @PostMapping("/upload")
-    public ResponseEntity<ResponseUrlPictureDto> uploadFile(@RequestParam MultipartFile file) {
-        ResponseUrlPictureDto dto = gameService.sendPictureFromCloud(file);
-        return ResponseEntity.ok(dto);
+    @PostMapping("/createGame")
+    public ResponseEntity<?> createGame(@RequestBody @Valid RequestCreateGameDto requestCreateGameDto) {
+        return null;
     }
+
+    @GetMapping("/{id]")
+    public ResponseEntity<?> getGameById(@PathVariable("id") String id) {
+        return null;
+    }
+
+    @GetMapping("/allGames")
+    public ResponseEntity<?> getAllGames() {
+        return null;
+    }
+
+    @GetMapping("user/{id}")
+    public ResponseEntity<?> getGameByUserId(@PathVariable("id") Long id) {
+        return null;
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<?> deleteGameById(@PathVariable("id") Long id) {
+        return null;
+    }
+
+    @DeleteMapping("/deleteAll/{userId]")
+    public ResponseEntity<?> deleteAllGamesByUserId(@PathVariable("userId") Long userId) {
+        return null;
+    }
+
 
 }

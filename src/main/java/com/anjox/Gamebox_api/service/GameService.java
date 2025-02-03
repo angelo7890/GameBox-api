@@ -1,44 +1,52 @@
 package com.anjox.Gamebox_api.service;
-import com.anjox.Gamebox_api.dto.ResponseUrlPictureDto;
-import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
+import com.anjox.Gamebox_api.dto.RequestCreateGameDto;
+import com.anjox.Gamebox_api.entity.GameEntity;
+import com.anjox.Gamebox_api.repository.GameRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.Map;
+import java.util.List;
+
 
 @Service
 public class GameService {
 
-    private final Cloudinary cloudinary;
+    private final GameRepository gameRepository;
 
-    public GameService(Cloudinary cloudinary) {
-        this.cloudinary = cloudinary;
+    public GameService(GameRepository gameRepository) {
+        this.gameRepository = gameRepository;
     }
 
-    public ResponseUrlPictureDto sendPictureFromCloud(MultipartFile picture ) {
-        try {
-            File file = convertToFile(picture);
-            Map uploadResult = cloudinary.uploader().upload(file, ObjectUtils.emptyMap());
-            String url = (String) uploadResult.get("url");
-            file.delete();
-            return new ResponseUrlPictureDto(url);
-        } catch (IOException e) {
-            throw new RuntimeException("erro ao fazer upload da img"+e.getMessage());
+    public GameEntity creategame(RequestCreateGameDto dto){
+        if(gameRepository.existsByUserIdAndTitle(dto.userId(), dto.title())){
+            throw new RuntimeException("ja existe um jogo com esse nome na sua lista de jogos");
         }
+        GameEntity game = new GameEntity(
+                dto.userId(),
+                dto.title(),
+                dto.description(),
+                dto.genre(),
+                dto.price(),
+                dto.imageUrl()
+        );
+        return gameRepository.save(game);
     }
 
-    private File convertToFile(MultipartFile multipartFile){
-    try {
-        File file = new File(multipartFile.getOriginalFilename());
-        FileOutputStream fos = new FileOutputStream(file);
-        fos.write(multipartFile.getBytes());
-        fos.close();
-        return file;
-    } catch (IOException e) {
-        throw new RuntimeException(e);
+    public GameEntity getGameById(Long id){
+        return gameRepository.findById(id).orElse(null);
     }
+
+    public List<GameEntity> getAllGames(){
+        return gameRepository.findAll();
+    }
+
+    public List<GameEntity> getGamesByUserId(Long userId){
+        return gameRepository.findByUserId(userId);
+    }
+
+    public void deleteGameById(Long id){
+        gameRepository.deleteById(id);
+    }
+
+    public void deleteAllGamesByUserId(Long userId){
+        gameRepository.deleteAllByUserId(userId);
     }
 }
