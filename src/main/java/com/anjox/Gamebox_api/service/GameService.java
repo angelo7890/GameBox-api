@@ -14,13 +14,8 @@ public class GameService {
 
     private final Cloudinary cloudinary;
 
-    public GameService(){
-        this.cloudinary = new Cloudinary(
-                ObjectUtils.asMap(
-                "cloud_name", "dlsnut9o1",
-                "api_key", "519759576274498",
-                "api_secret", "Zp4UxQxSfyLSiM48wvRj0VKWHo8"
-        ));
+    public GameService(Cloudinary cloudinary) {
+        this.cloudinary = cloudinary;
     }
 
     public ResponseUrlPictureDto sendPictureFromCloud(MultipartFile picture ) {
