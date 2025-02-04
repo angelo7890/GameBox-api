@@ -1,19 +1,22 @@
 package com.anjox.Gamebox_api.dto;
 
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+
 import java.math.BigDecimal;
 
 public record RequestCreateGameDto(
 
-        Long userId,
+       @NotNull Long userId,
 
-        String title,
+       @NotNull @NotEmpty String title,
 
-        String description,
+       @NotNull @NotEmpty String description,
 
-        String genre,
+       @NotNull @NotEmpty String genre,
 
-        BigDecimal price,
+       @NotNull BigDecimal price,
 
-        String imageUrl
+                String imageUrl
 ) {
 }

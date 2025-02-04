@@ -2,12 +2,12 @@ package com.anjox.Gamebox_api.controller;
 
 
 import com.anjox.Gamebox_api.dto.RequestCreateGameDto;
-import com.anjox.Gamebox_api.dto.ResponseUrlPictureDto;
+import com.anjox.Gamebox_api.dto.ResponseGameDto;
+import com.anjox.Gamebox_api.dto.ResponsePaginationGameDto;
 import com.anjox.Gamebox_api.service.GameService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/game")
@@ -24,17 +24,17 @@ public class GameController {
     }
 
     @GetMapping("/{id]")
-    public ResponseEntity<?> getGameById(@PathVariable("id") String id) {
+    public ResponseEntity<ResponseGameDto> getGameById(@PathVariable("id") String id) {
         return null;
     }
 
     @GetMapping("/allGames")
-    public ResponseEntity<?> getAllGames() {
+    public ResponseEntity<ResponsePaginationGameDto> getAllGames(@RequestParam int page, @RequestParam int size) {
         return null;
     }
 
     @GetMapping("user/{id}")
-    public ResponseEntity<?> getGameByUserId(@PathVariable("id") Long id) {
+    public ResponseEntity<ResponsePaginationGameDto> getAllGamesByUserId(@PathVariable("id") Long id , @RequestParam int page, @RequestParam int size) {
         return null;
     }
 

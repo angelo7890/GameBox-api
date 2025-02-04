@@ -1,15 +1,17 @@
 package com.anjox.Gamebox_api.dto;
 
 import com.anjox.Gamebox_api.enums.UserEnum;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 
 public record RequestRegisterUserDto(
 
-        String name,
+        @NotNull @NotEmpty String name,
 
-        String email,
+        @NotNull @NotEmpty  String email,
 
-        String password,
+        @NotNull @NotEmpty String password,
 
-        UserEnum type
+        @NotNull @NotEmpty UserEnum type
 ) {
 }
