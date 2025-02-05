@@ -6,12 +6,12 @@ public record ResponsePaginationGameDto(
 
         List<ResponseGameDto> content,
 
-        Integer totalPages,
+        int totalPages,
 
-        Long totalElements,
+        long totalElements,
 
-        Integer pageSize,
+        int pageSize,
 
-        Integer currentPage
+        int currentPage
 ) {
 }

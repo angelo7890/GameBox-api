@@ -2,12 +2,20 @@ package com.anjox.Gamebox_api.service;
 
 
 import com.anjox.Gamebox_api.dto.RequestRegisterUserDto;
+import com.anjox.Gamebox_api.dto.ResponseGameDto;
+import com.anjox.Gamebox_api.dto.ResponsePaginationUserDto;
+import com.anjox.Gamebox_api.dto.ResponseUserDto;
 import com.anjox.Gamebox_api.entity.UserEntity;
+import com.anjox.Gamebox_api.enums.UserEnum;
 import com.anjox.Gamebox_api.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -30,14 +38,38 @@ public class UserService {
          return userRepository.save(user);
     }
 
-    public UserEntity findById (Long  id){
-        return userRepository.findById(id).orElse(null);
+    public ResponseUserDto findById (Long  id){
+        UserEntity user = userRepository.findById(id).orElse(null);
+        if(user == null){
+           return new ResponseUserDto(
+                    user.getId(),
+                    user.getUsername(),
+                    user.getEmail(),
+                    user.getType()
+            );
+        }
+        throw new RuntimeException("usuario nao encontrado");
     }
 
-    public List<UserEntity> findAll(){
-        return userRepository.findAll();
+    public ResponsePaginationUserDto findAll( int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<UserEntity> users = userRepository.findAll(pageable);
+        List<ResponseUserDto> usersList = users.stream().map(
+                u -> new ResponseUserDto(
+                        u.getId(),
+                        u.getUsername(),
+                        u.getEmail(),
+                        u.getType()
+                )
+        ).collect(Collectors.toList());
+        return new ResponsePaginationUserDto(
+                usersList,
+                users.getTotalPages(),
+                users.getTotalElements(),
+                users.getSize(),
+                users.getNumber()
+        );
     }
-
     public void deleteById (Long id){
         userRepository.deleteById(id);
     }

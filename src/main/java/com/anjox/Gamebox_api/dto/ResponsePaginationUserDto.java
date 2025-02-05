@@ -6,12 +6,12 @@ public record ResponsePaginationUserDto(
 
         List<ResponseUserDto> content,
 
-        Integer totalPages,
+        int totalPages,
 
-        Long totalElements,
+        long totalElements,
 
-        Integer pageSize,
+        int pageSize,
 
-        Integer currentPage
+        int currentPage
 ) {
 }
