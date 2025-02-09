@@ -23,7 +23,7 @@ public class GameController {
         return null;
     }
 
-    @GetMapping("/{id]")
+    @GetMapping("/{id}")
     public ResponseEntity<ResponseGameDto> getGameById(@PathVariable("id") String id) {
         return null;
     }
@@ -43,7 +43,7 @@ public class GameController {
         return null;
     }
 
-    @DeleteMapping("/deleteAll/{userId]")
+    @DeleteMapping("/deleteAll/{userId}")
     public ResponseEntity<?> deleteAllGamesByUserId(@PathVariable("userId") Long userId) {
         return null;
     }

@@ -20,7 +20,7 @@ public class CloudinaryService {
 
     public ResponseUrlPictureDto sendPictureFromCloud(MultipartFile picture ) {
         try {
-            File file = convertToFile(picture);
+            File file = convertPictureToFile(picture);
             Map uploadResult = cloudinary.uploader().upload(file, ObjectUtils.emptyMap());
             String url = (String) uploadResult.get("url");
             file.delete();
@@ -39,7 +39,7 @@ public class CloudinaryService {
         }
     }
 
-    private File convertToFile(MultipartFile multipartFile){
+    private File convertPictureToFile(MultipartFile multipartFile){
         try {
             File file = new File(multipartFile.getOriginalFilename());
             FileOutputStream fos = new FileOutputStream(file);

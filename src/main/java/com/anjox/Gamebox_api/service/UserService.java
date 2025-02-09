@@ -8,10 +8,15 @@ import com.anjox.Gamebox_api.dto.ResponseUserDto;
 import com.anjox.Gamebox_api.entity.UserEntity;
 import com.anjox.Gamebox_api.enums.UserEnum;
 import com.anjox.Gamebox_api.repository.UserRepository;
+import org.springframework.context.annotation.Bean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -21,19 +26,25 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public UserEntity createUser (RequestRegisterUserDto dto){
         VerifyUsernameOrEmailIfExists(dto.name(), dto.email());
         validationPassword(dto.password());
+        String password = passwordEncoder.encode(dto.password());
+        String token = accountActivatorTokenGenerator();
         UserEntity user = new UserEntity(
                 dto.name(),
                 dto.email(),
-                dto.password(),
-                dto.type()
+                password,
+                dto.type(),
+                token,
+                false
         );
          return userRepository.save(user);
     }
@@ -74,6 +85,16 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
+    public void activateAccount (String token){
+        UserEntity user = userRepository.findByactivationCode(token);
+        if(user == null){
+            return;
+        }
+        user.setActivationCode(null);
+        user.setActivated(true);
+        userRepository.save(user);
+    }
+
     private void VerifyUsernameOrEmailIfExists (String username , String email){
         if(userRepository.findByUsername(username) != null || userRepository.findByEmail(email) != null){
             throw new RuntimeException("email ou usuario ja existe");
@@ -100,5 +121,15 @@ public class UserService {
         if(!list.isEmpty()) {
             throw new RuntimeException("password incorreto"+list);
         }
+    }
+    private String accountActivatorTokenGenerator() {
+        String caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        SecureRandom random = new SecureRandom();
+        StringBuilder token = new StringBuilder();
+        for (int i = 0; i < 256; i++) {
+            int index = random.nextInt(caracteres.length());
+            token.append(caracteres.charAt(index));
+        }
+        return token.toString();
     }
 }
