@@ -6,12 +6,12 @@ import jakarta.validation.constraints.NotNull;
 
 public record RequestRegisterUserDto(
 
-        @NotNull @NotEmpty String name,
+        @NotNull @NotEmpty  String name,
 
         @NotNull @NotEmpty  String email,
 
         @NotNull @NotEmpty String password,
 
-        @NotNull @NotEmpty UserEnum type
+         UserEnum type
 ) {
 }

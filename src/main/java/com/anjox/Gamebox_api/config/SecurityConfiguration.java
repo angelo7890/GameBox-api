@@ -2,7 +2,7 @@ package com.anjox.Gamebox_api.config;
 
 
 import com.anjox.Gamebox_api.components.SecurityFilter;
-import jakarta.servlet.Filter;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -32,9 +32,16 @@ public class SecurityConfiguration {
                 .csrf( csrf -> csrf.disable())
                 .sessionManagement(session-> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize-> authorize
-                        .requestMatchers(HttpMethod.POST, "/api/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/register").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/user/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/user/register").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/user/teste2").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/user/teste").hasRole("USER")
                         .anyRequest().authenticated()
+                )
+                .exceptionHandling(
+                        exeption -> exeption.accessDeniedHandler((request, response, accessDeniedException) -> {
+                                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        })
                 )
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

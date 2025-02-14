@@ -28,16 +28,20 @@ public class SecurityFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-
-        String token = recoverToken(request);
-        String username = jwtService.validateTokenJwt(token);
-
-        if (username != null && !username.isEmpty()) {
-            UserDetails user = userRepository.findByUsername(username);
-            if (user != null) {
-                var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+        var token = this.recoverToken(request);
+        if(token != null) {
+            var login = jwtService.validateToken(token);
+            if(login.isEmpty()){
+                throw new ServletException("Token invalido");
             }
+            String typeFromToken = jwtService.getTypeFromToken(token);
+            if(typeFromToken.equals("refresh") && !request.getRequestURI().equals("/api/user/refresh-token")){
+                throw new ServletException("Token de acesso invalido");
+            }
+            UserDetails user = userRepository.findByUsername(login);
+            var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
         }
         filterChain.doFilter(request, response);
     }

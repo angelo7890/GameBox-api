@@ -1,10 +1,7 @@
 package com.anjox.Gamebox_api.service;
 
 
-import com.anjox.Gamebox_api.dto.RequestRegisterUserDto;
-import com.anjox.Gamebox_api.dto.ResponseGameDto;
-import com.anjox.Gamebox_api.dto.ResponsePaginationUserDto;
-import com.anjox.Gamebox_api.dto.ResponseUserDto;
+import com.anjox.Gamebox_api.dto.*;
 import com.anjox.Gamebox_api.entity.UserEntity;
 import com.anjox.Gamebox_api.enums.UserEnum;
 import com.anjox.Gamebox_api.repository.UserRepository;
@@ -12,7 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -27,13 +24,15 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
-    public UserEntity createUser (RequestRegisterUserDto dto){
+    public void createUser (RequestRegisterUserDto dto){
         VerifyUsernameOrEmailIfExists(dto.name(), dto.email());
         validationPassword(dto.password());
         String password = passwordEncoder.encode(dto.password());
@@ -44,9 +43,17 @@ public class UserService {
                 password,
                 dto.type(),
                 token,
-                false
+                true
         );
-         return userRepository.save(user);
+         userRepository.save(user);
+    }
+
+    public ResponseJwtTokensDto refreshTokenAccessFromRefreshToken(String usernameFromRefreshToken){
+        if(usernameFromRefreshToken == null || usernameFromRefreshToken.isEmpty()){
+            throw new RuntimeException("username is null or empty");
+        }
+        UserDetails userDetails = userRepository.findByUsername(usernameFromRefreshToken);
+        return jwtService.getJwtUserToken(userDetails);
     }
 
     public ResponseUserDto findById (Long  id){
@@ -96,7 +103,7 @@ public class UserService {
     }
 
     private void VerifyUsernameOrEmailIfExists (String username , String email){
-        if(userRepository.findByUsername(username) != null || userRepository.findByEmail(email) != null){
+        if(userRepository.findByUsername(username) != null || userRepository.findByemail(email) != null){
             throw new RuntimeException("email ou usuario ja existe");
         }
     }
@@ -126,7 +133,7 @@ public class UserService {
         String caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
         SecureRandom random = new SecureRandom();
         StringBuilder token = new StringBuilder();
-        for (int i = 0; i < 256; i++) {
+        for (int i = 0; i < 255; i++) {
             int index = random.nextInt(caracteres.length());
             token.append(caracteres.charAt(index));
         }

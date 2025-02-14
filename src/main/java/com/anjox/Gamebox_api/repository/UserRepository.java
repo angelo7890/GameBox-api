@@ -4,12 +4,15 @@ import com.anjox.Gamebox_api.entity.UserEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
-    UserEntity findByEmail(String email);
+    UserEntity findByemail(String email);
     UserEntity findByUsername(String username);
-    UserEntity findById(long id);
+    UserEntity findByid(long id);
     Page<UserEntity> findAll(Pageable pageable);
     UserEntity findByactivationCode(String activationCode);
 
