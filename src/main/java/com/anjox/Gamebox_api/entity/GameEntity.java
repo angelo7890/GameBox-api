@@ -24,16 +24,19 @@ public class GameEntity {
 
     private String imageUrl;
 
+    private String imageId;
+
     public GameEntity() {
     }
 
-    public GameEntity(Long userId, String title, String description, String genre, BigDecimal price, String imageUrl) {
+    public GameEntity(Long userId, String title, String description, String genre, BigDecimal price, String imageUrl, String imageId) {
         this.userId = userId;
         this.title = title;
         this.description = description;
         this.genre = genre;
         this.price = price;
         this.imageUrl = imageUrl;
+        this.imageId = imageId;
     }
 
     public Long getId() {
@@ -90,5 +93,12 @@ public class GameEntity {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+    public String getImageId() {
+        return imageId;
+    }
+
+    public void setImageId(String imageId) {
+        this.imageId = imageId;
     }
 }

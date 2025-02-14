@@ -11,9 +11,14 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     UserEntity findByemail(String email);
+
     UserEntity findByUsername(String username);
-    UserEntity findByid(long id);
+
+    UserEntity findByid(Long id);
+
     Page<UserEntity> findAll(Pageable pageable);
+
     UserEntity findByactivationCode(String activationCode);
+
 
 }

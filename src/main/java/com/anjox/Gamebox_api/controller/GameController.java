@@ -7,6 +7,7 @@ import com.anjox.Gamebox_api.dto.ResponsePaginationGameDto;
 import com.anjox.Gamebox_api.service.GameService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,7 +19,7 @@ public class GameController {
         this.gameService = gameService;
     }
 
-    @PostMapping("/createGame")
+    @PostMapping("/create")
     public ResponseEntity<?> createGame(@RequestBody @Valid RequestCreateGameDto requestCreateGameDto) {
         return null;
     }
@@ -28,8 +29,14 @@ public class GameController {
         return null;
     }
 
-    @GetMapping("/allGames")
+    @GetMapping("/findAll")
     public ResponseEntity<ResponsePaginationGameDto> getAllGames(@RequestParam int page, @RequestParam int size) {
+        return null;
+    }
+
+    @GetMapping("/filter")
+    public ResponseEntity<ResponsePaginationGameDto> filterGames(@RequestParam String genre , @RequestParam int page, @RequestParam int size) {
+        String usernameFromToken = SecurityContextHolder.getContext().getAuthentication().getName();
         return null;
     }
 

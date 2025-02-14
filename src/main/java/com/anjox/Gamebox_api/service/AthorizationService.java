@@ -3,7 +3,6 @@ package com.anjox.Gamebox_api.service;
 
 import com.anjox.Gamebox_api.entity.UserEntity;
 import com.anjox.Gamebox_api.repository.UserRepository;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

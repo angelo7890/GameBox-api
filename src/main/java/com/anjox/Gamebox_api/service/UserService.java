@@ -4,15 +4,16 @@ package com.anjox.Gamebox_api.service;
 import com.anjox.Gamebox_api.dto.*;
 import com.anjox.Gamebox_api.entity.UserEntity;
 import com.anjox.Gamebox_api.enums.UserEnum;
+import com.anjox.Gamebox_api.exeption.MessageErrorExeption;
+import com.anjox.Gamebox_api.exeption.PasswordErrorExeption;
 import com.anjox.Gamebox_api.repository.UserRepository;
-import org.springframework.context.annotation.Bean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,33 +33,47 @@ public class UserService {
         this.jwtService = jwtService;
     }
 
-    public void createUser (RequestRegisterUserDto dto){
-        VerifyUsernameOrEmailIfExists(dto.name(), dto.email());
+    public void createUser (RequestRegisterUserDto dto , String usernameFromToken ){
+        if(VerifyUsernameOrEmailIfExists(dto.username(), dto.email())) {
+            throw new MessageErrorExeption("nome ou email ja existe", HttpStatus.CONFLICT);
+        }
+
         validationPassword(dto.password());
+
+        if (dto.type() == UserEnum.ADM) {
+            if (usernameFromToken == null || usernameFromToken.isEmpty()) {
+                throw new MessageErrorExeption("Token de usuário não fornecido para criação de administrador", HttpStatus.UNAUTHORIZED);
+            }
+
+            UserEntity requester = userRepository.findByUsername(usernameFromToken);
+            if (requester == null || requester.getType() != UserEnum.ADM) {
+                throw new MessageErrorExeption("Apenas administradores podem criar outros administradores", HttpStatus.UNAUTHORIZED);//
+            }
+        }
         String password = passwordEncoder.encode(dto.password());
         String token = accountActivatorTokenGenerator();
         UserEntity user = new UserEntity(
-                dto.name(),
+                dto.username(),
                 dto.email(),
                 password,
                 dto.type(),
                 token,
                 true
         );
-         userRepository.save(user);
+        userRepository.save(user);
     }
 
     public ResponseJwtTokensDto refreshTokenAccessFromRefreshToken(String usernameFromRefreshToken){
         if(usernameFromRefreshToken == null || usernameFromRefreshToken.isEmpty()){
-            throw new RuntimeException("username is null or empty");
+            throw new MessageErrorExeption("Username nao pode ser nulo ou vazio" , HttpStatus.BAD_REQUEST);
         }
         UserDetails userDetails = userRepository.findByUsername(usernameFromRefreshToken);
         return jwtService.getJwtUserToken(userDetails);
     }
 
     public ResponseUserDto findById (Long  id){
-        UserEntity user = userRepository.findById(id).orElse(null);
-        if(user == null){
+        UserEntity user = userRepository.findByid(id);
+        if(user != null){
            return new ResponseUserDto(
                     user.getId(),
                     user.getUsername(),
@@ -66,7 +81,7 @@ public class UserService {
                     user.getType()
             );
         }
-        throw new RuntimeException("usuario nao encontrado");
+        throw new MessageErrorExeption("usuario nao encontrado", HttpStatus.NOT_FOUND);
     }
 
     public ResponsePaginationUserDto findAll( int page, int size) {
@@ -102,10 +117,8 @@ public class UserService {
         userRepository.save(user);
     }
 
-    private void VerifyUsernameOrEmailIfExists (String username , String email){
-        if(userRepository.findByUsername(username) != null || userRepository.findByemail(email) != null){
-            throw new RuntimeException("email ou usuario ja existe");
-        }
+    private boolean VerifyUsernameOrEmailIfExists (String username , String email){
+        return userRepository.findByUsername(username) != null || userRepository.findByemail(email) != null;
     }
 
     private void validationPassword(String password){
@@ -123,10 +136,10 @@ public class UserService {
             list.add("a senha deve conter numeros");
         }
         if(!Pattern.matches(".*[!@#$%?+-].*", password)) {
-            list.add("a senha deve conter caracteres especiais: !@#$%?+- ");
+            list.add("a senha deve conter caracteres especiais: ! @ # $ % ? + - ");
         }
         if(!list.isEmpty()) {
-            throw new RuntimeException("password incorreto"+list);
+            throw new PasswordErrorExeption("Password Incorreto", list, HttpStatus.BAD_REQUEST);
         }
     }
     private String accountActivatorTokenGenerator() {

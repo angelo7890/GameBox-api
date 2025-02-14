@@ -1,6 +1,7 @@
 package com.anjox.Gamebox_api.controller;
 import com.anjox.Gamebox_api.dto.*;
 import com.anjox.Gamebox_api.entity.UserEntity;
+import com.anjox.Gamebox_api.exeption.error.ResponseError;
 import com.anjox.Gamebox_api.service.JwtService;
 import com.anjox.Gamebox_api.service.UserService;
 import jakarta.validation.Valid;
@@ -28,8 +29,9 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> createUser (@RequestBody  RequestRegisterUserDto requestRegisterUserDto) {
-        userService.createUser(requestRegisterUserDto);
+    public ResponseEntity<?> createUser (@RequestBody @Valid RequestRegisterUserDto requestRegisterUserDto) {
+        String usernameFromToken = SecurityContextHolder.getContext().getAuthentication().getName();
+        userService.createUser(requestRegisterUserDto , usernameFromToken);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
@@ -43,12 +45,14 @@ public class UserController {
                 ResponseJwtTokensDto response = jwtService.getJwtUserToken(userDetails);
                 return ResponseEntity.ok().body(response);
             } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Falha na autenticação");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
         } catch (BadCredentialsException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuário ou senha incorretos");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                    new ResponseError("Credenciais inválidas", HttpStatus.UNAUTHORIZED));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erro ao processar login");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    new ResponseError("Ocorreu um erro", HttpStatus.INTERNAL_SERVER_ERROR));
         }
     }
 
@@ -62,16 +66,19 @@ public class UserController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ResponseUserDto> getUserById(@PathVariable("id") Long id){
-        return null;
+       ResponseUserDto dto = userService.findById(id);
+       return ResponseEntity.ok().body(dto);
     }
 
-    @GetMapping("/allUser")
+    @GetMapping("/findAll")
     public ResponseEntity<ResponsePaginationUserDto> getAllUser(@RequestParam int page, @RequestParam int size){
-        return null;
+        ResponsePaginationUserDto dto = userService.findAll(page, size);
+        return ResponseEntity.ok().body(dto);
     }
 
-    @DeleteMapping("/deleteUser/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable("id") Long id){
-        return null;
+        userService.deleteById(id);
+        return ResponseEntity.ok().build();
     }
 }

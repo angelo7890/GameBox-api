@@ -1,12 +1,14 @@
 package com.anjox.Gamebox_api.service;
 
 import com.anjox.Gamebox_api.dto.ResponseJwtTokensDto;
+import com.anjox.Gamebox_api.exeption.MessageErrorExeption;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import java.time.Instant;
@@ -46,7 +48,7 @@ public class JwtService {
                     .withClaim("type", "access")
                     .sign(algorithm);
         } catch (JWTCreationException exception) {
-            throw new RuntimeException("Erro ao gerar token");
+            throw new MessageErrorExeption("Erro ao gerar token", HttpStatus.NOT_FOUND);
         }
     }
 
@@ -60,7 +62,7 @@ public class JwtService {
                     .withClaim("type", "refresh")
                     .sign(algorithm);
         } catch (JWTCreationException exception) {
-            throw new RuntimeException("Erro ao gerar refresh token");
+            throw new MessageErrorExeption("Erro ao gerar refresh token", HttpStatus.NOT_FOUND);
         }
     }
 
