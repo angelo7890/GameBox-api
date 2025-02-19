@@ -5,6 +5,7 @@ import com.anjox.Gamebox_api.exeption.error.ResponseError;
 import com.anjox.Gamebox_api.service.JwtService;
 import com.anjox.Gamebox_api.service.UserService;
 import jakarta.validation.Valid;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -64,10 +65,11 @@ public class UserController {
     }
 
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ResponseUserDto> getUserById(@PathVariable("id") Long id){
-       ResponseUserDto dto = userService.findById(id);
-       return ResponseEntity.ok().body(dto);
+    @GetMapping("/{idUser}")
+    public ResponseEntity<ResponseUserDto> getUserById(@PathVariable("idUser") Long idUser){
+        String usernameFromToken = SecurityContextHolder.getContext().getAuthentication().getName();
+        ResponseUserDto dto = userService.findById(idUser , usernameFromToken);
+        return ResponseEntity.ok().body(dto);
     }
 
     @GetMapping("/findAll")
@@ -76,9 +78,23 @@ public class UserController {
         return ResponseEntity.ok().body(dto);
     }
 
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable("id") Long id){
-        userService.deleteById(id);
+    @GetMapping("/verify")
+    public ResponseEntity<?> verifyUserAccount (@Param("token") String token){
+        userService.activateAccount(token);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/update/{userId}")
+    public ResponseEntity<?> updateUser(@PathVariable("userId") Long userId, @RequestBody RequestUpdateUserDto dto){
+        String usernameFromToken = SecurityContextHolder.getContext().getAuthentication().getName();
+        userService.updateUserById(userId , dto , usernameFromToken);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/delete/{userId}")
+    public ResponseEntity<?> deleteUser(@PathVariable("userId") Long userId){
+        String usernameFromToken = SecurityContextHolder.getContext().getAuthentication().getName();
+        userService.deleteById(userId , usernameFromToken);
         return ResponseEntity.ok().build();
     }
 }

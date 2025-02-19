@@ -21,5 +21,4 @@ public interface GameRepository extends JpaRepository<GameEntity, Long> {
 
     Page<GameEntity> findByGenreAndUserId(String genre, Long userId, Pageable pageable);
 
-
 }

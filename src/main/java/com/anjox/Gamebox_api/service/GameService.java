@@ -1,18 +1,21 @@
 package com.anjox.Gamebox_api.service;
-import com.anjox.Gamebox_api.dto.RequestCreateGameDto;
-import com.anjox.Gamebox_api.dto.RequestUpdatePictureDto;
-import com.anjox.Gamebox_api.dto.ResponseGameDto;
-import com.anjox.Gamebox_api.dto.ResponsePaginationGameDto;
+import com.anjox.Gamebox_api.dto.*;
 import com.anjox.Gamebox_api.entity.GameEntity;
 import com.anjox.Gamebox_api.entity.UserEntity;
+import com.anjox.Gamebox_api.enums.UserEnum;
 import com.anjox.Gamebox_api.exeption.MessageErrorExeption;
 import com.anjox.Gamebox_api.repository.GameRepository;
 import com.anjox.Gamebox_api.repository.UserRepository;
+import org.apache.catalina.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.ErrorResponseException;
+
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,6 +37,9 @@ public class GameService {
         if(gameRepository.existsByUserIdAndTitle(dto.userId(), dto.title())){
             throw new MessageErrorExeption("ja existe um jogo com esse nome na sua lista de jogos", HttpStatus.CONFLICT);
         }
+        if (dto.price().compareTo(BigDecimal.ZERO) < 0) {
+            throw new MessageErrorExeption("O preço não pode ser negativo", HttpStatus.BAD_REQUEST);
+        }
         GameEntity game = new GameEntity(
                 dto.userId(),
                 dto.title(),
@@ -46,19 +52,23 @@ public class GameService {
         gameRepository.save(game);
     }
 
-    public ResponseGameDto getGameById(Long id){
+    public ResponseGameDto getGameById(Long id , String usernameFromToken){
         GameEntity game =  gameRepository.findByid(id);
+        UserEntity user = userRepository.findByUsername(usernameFromToken);
         if(game!=null){
-            return new ResponseGameDto(
-                    game.getId(),
-                    game.getTitle(),
-                    game.getDescription(),
-                    game.getGenre(),
-                    game.getPrice(),
-                    game.getImageUrl()
-            ) ;
+            if(game.getUserId().equals(user.getId()) || user.getType().equals(UserEnum.ADM)){
+                return new ResponseGameDto(
+                        game.getId(),
+                        game.getTitle(),
+                        game.getDescription(),
+                        game.getGenre(),
+                        game.getPrice(),
+                        game.getImageUrl()
+                ) ;
+            }
+            throw new MessageErrorExeption("Voce nao pode acessar as informaçoes de outra pessoa", HttpStatus.FORBIDDEN);
         }
-        throw new MessageErrorExeption("game nao encontrado", HttpStatus.BAD_REQUEST);
+        throw new MessageErrorExeption("game nao encontrado", HttpStatus.NOT_FOUND);
     }
 
     public ResponsePaginationGameDto getAllGames(int size, int page){
@@ -67,23 +77,75 @@ public class GameService {
         return getResponsePaginationGameDto(games);
     }
 
-    public ResponsePaginationGameDto filterGamesByGenre(String genre , String username , int size, int page){
-        UserEntity user = userRepository.findByUsername(username);
+    public ResponsePaginationGameDto filterGamesByGenre(Long userId , String genre , String usernameFromToken , int size, int page){
+        UserEntity user = userRepository.findByid(userId);
+        UserEntity userFromUsername = userRepository.findByUsername(usernameFromToken);
         if(user == null){
             throw new MessageErrorExeption("impossivel filtrar, pois o usuario do jogo esta vazio ou nao foi encontrado", HttpStatus.BAD_REQUEST);
         }
-        Pageable pageable = PageRequest.of(page, size);
-        Page<GameEntity> games = gameRepository.findByGenreAndUserId(genre, user.getId(), pageable);
-        return getResponsePaginationGameDto(games);
+        if(user.getId().equals(userFromUsername.getId()) || userFromUsername.getType().equals(UserEnum.ADM)){
+            Pageable pageable = PageRequest.of(page, size);
+            Page<GameEntity> games = gameRepository.findByGenreAndUserId(genre, user.getId(), pageable);
+            return getResponsePaginationGameDto(games);
+        }
+        throw new MessageErrorExeption("Voce nao filtrar jogos de outra pessoa", HttpStatus.FORBIDDEN);
 
     }
 
-    public ResponsePaginationGameDto getGamesByUserId(Long userId, int page, int size){
-        Pageable pageable  = PageRequest.of(page, size);
-        Page<GameEntity> gamesByUserId=  gameRepository.findByUserId(userId, pageable);
-        return getResponsePaginationGameDto(gamesByUserId);
+    public ResponsePaginationGameDto getGamesByUserId(Long userId, String usernameFromToken, int page, int size){
+        UserEntity userFromToken = userRepository.findByUsername(usernameFromToken);
+        UserEntity user = userRepository.findByid(userId);
+        if(user != null){
+            if(userFromToken.getId().equals(user.getId()) || userFromToken.getType().equals(UserEnum.ADM)){
+                Pageable pageable  = PageRequest.of(page, size);
+                Page<GameEntity> gamesByUserId=  gameRepository.findByUserId(userId, pageable);
+                return getResponsePaginationGameDto(gamesByUserId);
+            }
+            throw new MessageErrorExeption("Voce nao pode ver os jogos de outra pessoa", HttpStatus.FORBIDDEN);
+        }
+        throw new MessageErrorExeption("Id de usuario nao encontrado", HttpStatus.NOT_FOUND);
+
     }
 
+    @Transactional
+    public void updateGameById(Long gameId, RequestUpdateGameDto dto, String usernameFromToken) {
+        UserEntity user = userRepository.findByUsername(usernameFromToken);
+        GameEntity game = gameRepository.findByid(gameId);
+
+        if (user == null || game == null) {
+            throw new MessageErrorExeption("Game ou Usuário não encontrado", HttpStatus.BAD_REQUEST);
+        }
+
+        if (!game.getUserId().equals(user.getId()) && !user.getType().equals(UserEnum.ADM)) {
+            throw new MessageErrorExeption("Você não pode alterar as informações de um jogo de outra pessoa", HttpStatus.UNAUTHORIZED);
+        }
+
+        if (dto.title() != null && !dto.title().isEmpty()) {
+            if (gameRepository.existsByUserIdAndTitle(user.getId(), dto.title())) {
+                throw new MessageErrorExeption("Você já possui um jogo com esse título", HttpStatus.CONFLICT);
+            }
+            game.setTitle(dto.title());
+        }
+
+        if (dto.description() != null && !dto.description().isEmpty()) {
+            game.setDescription(dto.description());
+        }
+
+        if (dto.genre() != null && !dto.genre().isEmpty()) {
+            game.setGenre(dto.genre());
+        }
+
+        if (dto.price() != null) {
+            if (dto.price().compareTo(BigDecimal.ZERO) < 0) {
+                throw new MessageErrorExeption("O preço não pode ser negativo", HttpStatus.BAD_REQUEST);
+            }
+            game.setPrice(dto.price());
+        }
+
+        gameRepository.save(game);
+    }
+
+    @Transactional
     public void updatePictureForGameById(RequestUpdatePictureDto dto){
         GameEntity game =  gameRepository.findByid(dto.gameId());
         if(game!=null){
@@ -96,27 +158,37 @@ public class GameService {
         }
     }
 
-    public void deleteGameById(Long id){
+    @Transactional
+    public void deleteGameById(Long id , String usernameFromToken){
+        UserEntity user = userRepository.findByUsername(usernameFromToken);
         GameEntity game =  gameRepository.findByid(id);
         if(game!=null){
-            if(game.getImageId()!=null){
-                cloudinaryService.deletePictureByIdFromCloud(game.getImageId());
+            if(game.getUserId().equals(user.getId()) || user.getType().equals(UserEnum.ADM)){
+                if(game.getImageId()!=null){
+                    cloudinaryService.deletePictureByIdFromCloud(game.getImageId());
+                }
+                gameRepository.delete(game);
             }
-            gameRepository.delete(game);
+            throw new MessageErrorExeption("Voce nao pode apagar jogos de outra pessoa", HttpStatus.FORBIDDEN);
         }
         throw new MessageErrorExeption("game nao encontrado", HttpStatus.BAD_REQUEST);
     }
 
-    public void deleteAllGamesByUserId(Long userId){
-        List<GameEntity> games = gameRepository.findByUserId(userId);
-        if (games != null && !games.isEmpty()) {
-            for (GameEntity game : games) {
-                if (game.getImageId() != null) {
-                    cloudinaryService.deletePictureByIdFromCloud(game.getImageId());
-                    gameRepository.deleteById(game.getId());
+    @Transactional
+    public void deleteAllGamesByUserId(Long userId , String usernameFromToken){
+        UserEntity user = userRepository.findByUsername(usernameFromToken);
+        if (user.getId().equals(userId) || user.getType().equals(UserEnum.ADM)) {
+            List<GameEntity> games = gameRepository.findByUserId(userId);
+            if (games != null && !games.isEmpty()) {
+                for (GameEntity game : games) {
+                    if (game.getImageId() != null) {
+                        cloudinaryService.deletePictureByIdFromCloud(game.getImageId());
+                        gameRepository.deleteById(game.getId());
+                    }
                 }
             }
         }
+        throw new MessageErrorExeption("Voce no pode excluir os jogos de outra pessoa", HttpStatus.FORBIDDEN);
     }
 
     private ResponsePaginationGameDto getResponsePaginationGameDto(Page<GameEntity> gamesByUserId) {

@@ -1,12 +1,14 @@
 package com.anjox.Gamebox_api.components;
 
 
+import com.anjox.Gamebox_api.exeption.MessageErrorExeption;
 import com.anjox.Gamebox_api.repository.UserRepository;
 import com.anjox.Gamebox_api.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -32,11 +34,11 @@ public class SecurityFilter extends OncePerRequestFilter {
         if(token != null) {
             var login = jwtService.validateToken(token);
             if(login.isEmpty()){
-                throw new ServletException("Token invalido");
+                throw new MessageErrorExeption("Token invalido", HttpStatus.UNAUTHORIZED);
             }
             String typeFromToken = jwtService.getTypeFromToken(token);
             if(typeFromToken.equals("refresh") && !request.getRequestURI().equals("/api/user/refresh-token")){
-                throw new ServletException("Token de acesso invalido");
+                throw new MessageErrorExeption("Token de acesso invalido", HttpStatus.UNAUTHORIZED);
             }
             UserDetails user = userRepository.findByUsername(login);
             var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());

@@ -37,7 +37,7 @@ public class CloudinaryService {
         try{
             return cloudinary.uploader().destroy(id, ObjectUtils.emptyMap());
         } catch (IOException e) {
-            throw new MessageErrorExeption("erro ao fazer deletar picture", HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new MessageErrorExeption("Erro ao deletar picture", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

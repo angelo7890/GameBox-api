@@ -20,5 +20,6 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     UserEntity findByactivationCode(String activationCode);
 
+    boolean existsByUsername(String username);
 
 }

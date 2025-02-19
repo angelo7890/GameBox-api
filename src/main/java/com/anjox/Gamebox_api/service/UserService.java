@@ -7,6 +7,9 @@ import com.anjox.Gamebox_api.enums.UserEnum;
 import com.anjox.Gamebox_api.exeption.MessageErrorExeption;
 import com.anjox.Gamebox_api.exeption.PasswordErrorExeption;
 import com.anjox.Gamebox_api.repository.UserRepository;
+import com.anjox.Gamebox_api.util.AESEncryption;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -14,23 +17,28 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
 public class UserService {
 
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final RabbitMQService rabbitMQService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, RabbitMQService rabbitMQService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.rabbitMQService = rabbitMQService;
     }
 
     public void createUser (RequestRegisterUserDto dto , String usernameFromToken ){
@@ -52,6 +60,7 @@ public class UserService {
         }
         String password = passwordEncoder.encode(dto.password());
         String token = accountActivatorTokenGenerator();
+        RabbitMQActivationAccountDto rabbitMQActivationAccountDto = new RabbitMQActivationAccountDto(dto.username(), dto.email(), token);
         UserEntity user = new UserEntity(
                 dto.username(),
                 dto.email(),
@@ -61,6 +70,7 @@ public class UserService {
                 true
         );
         userRepository.save(user);
+        rabbitMQService.sendActivateAccountQueue(rabbitMQActivationAccountDto);
     }
 
     public ResponseJwtTokensDto refreshTokenAccessFromRefreshToken(String usernameFromRefreshToken){
@@ -71,17 +81,18 @@ public class UserService {
         return jwtService.getJwtUserToken(userDetails);
     }
 
-    public ResponseUserDto findById (Long  id){
+    public ResponseUserDto findById (Long  id , String usernameFromToken){
         UserEntity user = userRepository.findByid(id);
-        if(user != null){
-           return new ResponseUserDto(
+        UserEntity userFromToken = userRepository.findByUsername(usernameFromToken);
+        if(userFromToken.getId().equals(user.getId()) || userFromToken.getType().equals(UserEnum.ADM)){
+            return new ResponseUserDto(
                     user.getId(),
                     user.getUsername(),
                     user.getEmail(),
                     user.getType()
             );
         }
-        throw new MessageErrorExeption("usuario nao encontrado", HttpStatus.NOT_FOUND);
+        throw new MessageErrorExeption("Voce nao pode buscar Informaçoes de outro usuario", HttpStatus.FORBIDDEN);
     }
 
     public ResponsePaginationUserDto findAll( int page, int size) {
@@ -103,10 +114,48 @@ public class UserService {
                 users.getNumber()
         );
     }
-    public void deleteById (Long id){
-        userRepository.deleteById(id);
+
+    @Transactional
+    public void updateUserById(Long userId, RequestUpdateUserDto dto, String usernameFromToken) {
+        UserEntity user = userRepository.findByid(userId);
+        UserEntity userFromToken = userRepository.findByUsername(usernameFromToken);
+
+        if (user == null) {
+            throw new MessageErrorExeption("Usuário não encontrado", HttpStatus.NOT_FOUND);
+        }
+
+        if (!user.getId().equals(userFromToken.getId()) && !userFromToken.getType().equals(UserEnum.ADM)) {
+            throw new MessageErrorExeption("Você não pode alterar informação de outro usuário", HttpStatus.UNAUTHORIZED);
+        }
+
+        if (dto.username() != null && !dto.username().isEmpty()) {
+            if (!user.getUsername().equals(dto.username()) && userRepository.existsByUsername(dto.username())) {
+                throw new MessageErrorExeption("O username já existe", HttpStatus.CONFLICT);
+            }
+            user.setUsername(dto.username());
+        }
+
+        if (dto.password() != null && !dto.password().isEmpty()) {
+            validationPassword(dto.password());
+            user.setPassword(passwordEncoder.encode(dto.password()));
+        }
+
+        userRepository.save(user);
     }
 
+    @Transactional
+    public void deleteById (Long id , String usernameFromToken) {
+        UserEntity user = userRepository.findByUsername(usernameFromToken);
+        if(user.getId().equals(id) || user.getType().equals(UserEnum.ADM)){
+            if(userRepository.existsById(id)){
+                userRepository.deleteById(id);
+            }
+            throw new MessageErrorExeption("Usuario nao encontrado", HttpStatus.NOT_FOUND);
+        }
+        throw new MessageErrorExeption("Voce nao pode excluir a conta de outra pessoa", HttpStatus.FORBIDDEN);
+    }
+
+    @Transactional
     public void activateAccount (String token){
         UserEntity user = userRepository.findByactivationCode(token);
         if(user == null){
@@ -115,6 +164,25 @@ public class UserService {
         user.setActivationCode(null);
         user.setActivated(true);
         userRepository.save(user);
+    }
+
+    @Transactional
+    public void refreshPassword(String email , String usernameFromToken){
+        UserEntity userFromToken = userRepository.findByUsername(usernameFromToken);
+        UserEntity userFromEmail = userRepository.findByemail(email);
+        if(userFromEmail != null){
+            if(userFromToken.getId().equals(userFromEmail.getId()) || userFromToken.getType().equals(UserEnum.ADM)){
+                    String newPassword = genereteNewPassword();
+                    String aesPasswordEncrypted = AESEncryption.encryptPassword(newPassword);
+                    String passwordEncoded = passwordEncoder.encode(newPassword);
+                    userFromEmail.setPassword(passwordEncoded);
+                    userRepository.save(userFromEmail);
+                    RabbitMQResetPasswordDto rabbitMQResetPasswordDto = new RabbitMQResetPasswordDto(userFromEmail.getUsername(),userFromEmail.getEmail(),aesPasswordEncrypted);
+                    rabbitMQService.sendResetPasswordQueue(rabbitMQResetPasswordDto);
+            }
+            throw new MessageErrorExeption("Voce nao pode mudar a senha de outra pessoa", HttpStatus.FORBIDDEN);
+        }
+        throw new MessageErrorExeption("Usuario nao encontrado", HttpStatus.NOT_FOUND);
     }
 
     private boolean VerifyUsernameOrEmailIfExists (String username , String email){
@@ -151,5 +219,11 @@ public class UserService {
             token.append(caracteres.charAt(index));
         }
         return token.toString();
+    }
+
+    private String genereteNewPassword(){
+        UUID uuid = UUID.randomUUID();
+        String truncatedUUID;
+        return truncatedUUID = uuid.toString().replace("-", "").substring(0, 15);
     }
 }
