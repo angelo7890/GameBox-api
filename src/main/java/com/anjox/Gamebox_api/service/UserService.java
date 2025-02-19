@@ -6,6 +6,7 @@ import com.anjox.Gamebox_api.entity.UserEntity;
 import com.anjox.Gamebox_api.enums.UserEnum;
 import com.anjox.Gamebox_api.exeption.MessageErrorExeption;
 import com.anjox.Gamebox_api.exeption.PasswordErrorExeption;
+import com.anjox.Gamebox_api.producer.RabbitMQUserProducer;
 import com.anjox.Gamebox_api.repository.UserRepository;
 import com.anjox.Gamebox_api.util.AESEncryption;
 import org.slf4j.Logger;
@@ -28,17 +29,16 @@ import java.util.stream.Collectors;
 @Service
 public class UserService {
 
-    private static final Logger log = LoggerFactory.getLogger(UserService.class);
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final RabbitMQService rabbitMQService;
+    private final RabbitMQUserProducer rabbitMQUserProducer;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, RabbitMQService rabbitMQService) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, RabbitMQUserProducer rabbitMQUserProducer) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
-        this.rabbitMQService = rabbitMQService;
+        this.rabbitMQUserProducer = rabbitMQUserProducer;
     }
 
     public void createUser (RequestRegisterUserDto dto , String usernameFromToken ){
@@ -60,6 +60,7 @@ public class UserService {
         }
         String password = passwordEncoder.encode(dto.password());
         String token = accountActivatorTokenGenerator();
+        System.out.println(token);
         RabbitMQActivationAccountDto rabbitMQActivationAccountDto = new RabbitMQActivationAccountDto(dto.username(), dto.email(), token);
         UserEntity user = new UserEntity(
                 dto.username(),
@@ -67,10 +68,10 @@ public class UserService {
                 password,
                 dto.type(),
                 token,
-                true
+                false
         );
         userRepository.save(user);
-        rabbitMQService.sendActivateAccountQueue(rabbitMQActivationAccountDto);
+        rabbitMQUserProducer.sendActivationAccountQueue(rabbitMQActivationAccountDto);
     }
 
     public ResponseJwtTokensDto refreshTokenAccessFromRefreshToken(String usernameFromRefreshToken){
@@ -156,14 +157,15 @@ public class UserService {
     }
 
     @Transactional
-    public void activateAccount (String token){
+    public boolean activateAccount (String token){
         UserEntity user = userRepository.findByactivationCode(token);
         if(user == null){
-            return;
+            return false;
         }
         user.setActivationCode(null);
         user.setActivated(true);
         userRepository.save(user);
+        return true;
     }
 
     @Transactional
@@ -178,7 +180,7 @@ public class UserService {
                     userFromEmail.setPassword(passwordEncoded);
                     userRepository.save(userFromEmail);
                     RabbitMQResetPasswordDto rabbitMQResetPasswordDto = new RabbitMQResetPasswordDto(userFromEmail.getUsername(),userFromEmail.getEmail(),aesPasswordEncrypted);
-                    rabbitMQService.sendResetPasswordQueue(rabbitMQResetPasswordDto);
+                    rabbitMQUserProducer.sendResetPasswordQueue(rabbitMQResetPasswordDto);
             }
             throw new MessageErrorExeption("Voce nao pode mudar a senha de outra pessoa", HttpStatus.FORBIDDEN);
         }
@@ -214,7 +216,7 @@ public class UserService {
         String caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
         SecureRandom random = new SecureRandom();
         StringBuilder token = new StringBuilder();
-        for (int i = 0; i < 255; i++) {
+        for (int i = 0; i < 64; i++) {
             int index = random.nextInt(caracteres.length());
             token.append(caracteres.charAt(index));
         }

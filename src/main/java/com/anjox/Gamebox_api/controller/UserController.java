@@ -79,10 +79,13 @@ public class UserController {
     }
 
     @GetMapping("/verify")
-    public ResponseEntity<?> verifyUserAccount (@Param("token") String token){
-        userService.activateAccount(token);
-        return ResponseEntity.ok().build();
+    public String verifyUserAccount (@Param("code") String code){
+        if(userService.activateAccount(code)) {
+            return "deu certo";
+        }
+        return "token nao encontrado ou ja foi ativado";
     }
+
 
     @PutMapping("/update/{userId}")
     public ResponseEntity<?> updateUser(@PathVariable("userId") Long userId, @RequestBody RequestUpdateUserDto dto){

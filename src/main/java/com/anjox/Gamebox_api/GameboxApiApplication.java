@@ -1,5 +1,6 @@
 package com.anjox.Gamebox_api;
 
+import com.anjox.Gamebox_api.config.RabbitMQConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
