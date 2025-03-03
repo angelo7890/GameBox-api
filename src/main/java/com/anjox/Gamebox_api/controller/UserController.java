@@ -64,6 +64,12 @@ public class UserController {
         return ResponseEntity.ok().body(dto);
     }
 
+    @PostMapping("/refresh-password")
+    public ResponseEntity<?> refreshPassword(@RequestBody @Valid RequestRefreshPasswordDto requestRefreshPasswordDto) {
+        userService.refreshPassword(requestRefreshPasswordDto.email());
+        return ResponseEntity.ok().build();
+    }
+
 
     @GetMapping("/{idUser}")
     public ResponseEntity<ResponseUserDto> getUserById(@PathVariable("idUser") Long idUser){
@@ -73,7 +79,7 @@ public class UserController {
     }
 
     @GetMapping("/findAll")
-    public ResponseEntity<ResponsePaginationUserDto> getAllUser(@RequestParam int page, @RequestParam int size){
+    public ResponseEntity<ResponsePaginationUserDto> getAllUser(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
         ResponsePaginationUserDto dto = userService.findAll(page, size);
         return ResponseEntity.ok().body(dto);
     }
@@ -83,6 +89,7 @@ public class UserController {
         if(userService.activateAccount(code)) {
             return "deu certo";
         }
+        //aqui pode fazer um redirecionamento para a pagina de login
         return "token nao encontrado ou ja foi ativado";
     }
 

@@ -6,14 +6,12 @@ import com.anjox.Gamebox_api.enums.UserEnum;
 import com.anjox.Gamebox_api.exeption.MessageErrorExeption;
 import com.anjox.Gamebox_api.repository.GameRepository;
 import com.anjox.Gamebox_api.repository.UserRepository;
-import org.apache.catalina.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.ErrorResponseException;
 
 import java.math.BigDecimal;
 import java.util.List;

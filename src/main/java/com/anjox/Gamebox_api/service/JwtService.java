@@ -82,10 +82,6 @@ public class JwtService {
         return JWT.decode(token).getClaim("type").asString();
     }
 
-    public String getUsernameFromToken(String token) {
-        return JWT.decode(token).getSubject();
-    }
-
     private Instant genExpiration(long milliseconds) {
         return LocalDateTime.now()
                 .plusSeconds(milliseconds / 1000)

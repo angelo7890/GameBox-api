@@ -26,41 +26,47 @@ public class GameController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/{idGame}")
-    public ResponseEntity<ResponseGameDto> getGameById(@PathVariable("idGame") Long idGame) {
+    @GetMapping("/{gameId}")
+    public ResponseEntity<ResponseGameDto> getGameById(@PathVariable("gameId") Long gameid) {
         String usernameFromToken = SecurityContextHolder.getContext().getAuthentication().getName();
-        ResponseGameDto dto = gameService.getGameById(idGame, usernameFromToken);
+        ResponseGameDto dto = gameService.getGameById(gameid, usernameFromToken);
         return ResponseEntity.ok().body(dto);
     }
 
     @GetMapping("/findAll")
-    public ResponseEntity<ResponsePaginationGameDto> getAllGames(@RequestParam int page, @RequestParam int size) {
+    public ResponseEntity<ResponsePaginationGameDto> getAllGames(@RequestParam(defaultValue = "0") int page,
+                                                                 @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok().body(gameService.getAllGames(size, page));
     }
 
-    @GetMapping("/filter/{idUser}")
-    public ResponseEntity<ResponsePaginationGameDto> filterGames(@PathVariable("idUser") Long idUser, @RequestParam String genre , @RequestParam int page, @RequestParam int size) {
+    @GetMapping("/filter/{userId}/{genre}")
+    public ResponseEntity<ResponsePaginationGameDto> filterGames(@PathVariable("userId") Long userId,
+                                                                 @PathVariable("genre") String genre ,
+                                                                 @RequestParam(defaultValue = "0") int page,
+                                                                 @RequestParam(defaultValue = "10") int size) {
         String usernameFromToken = SecurityContextHolder.getContext().getAuthentication().getName();
-        return ResponseEntity.ok().body(gameService.filterGamesByGenre( idUser ,genre, usernameFromToken, size, page));
+        return ResponseEntity.ok().body(gameService.filterGamesByGenre( userId ,genre, usernameFromToken, size, page));
     }
 
-    @GetMapping("user/{idUser}")
-    public ResponseEntity<ResponsePaginationGameDto> getAllGamesByUserId(@PathVariable("idUser") Long idUser , @RequestParam int page, @RequestParam int size) {
+    @GetMapping("user/{userId}")
+    public ResponseEntity<ResponsePaginationGameDto> getAllGamesByUserId(@PathVariable("userId") Long userId ,
+                                                                         @RequestParam(defaultValue = "0") int page,
+                                                                         @RequestParam(defaultValue = "10") int size) {
         String usernameFromToken = SecurityContextHolder.getContext().getAuthentication().getName();
-        return ResponseEntity.ok().body(gameService.getGamesByUserId(idUser , usernameFromToken , page, size));
+        return ResponseEntity.ok().body(gameService.getGamesByUserId(userId , usernameFromToken , page, size));
     }
 
-    @PutMapping("/update/{idGame}")
-    public ResponseEntity<?> updateGame(@PathVariable("idGame") Long idGame, @RequestBody RequestUpdateGameDto requestUpdateGameDto) {
+    @PutMapping("/update/{gameId}")
+    public ResponseEntity<?> updateGame(@PathVariable("gameId") Long gameId, @RequestBody RequestUpdateGameDto requestUpdateGameDto) {
         String usernameFromToken = SecurityContextHolder.getContext().getAuthentication().getName();
-        gameService.updateGameById(idGame, requestUpdateGameDto, usernameFromToken);
+        gameService.updateGameById(gameId, requestUpdateGameDto, usernameFromToken);
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/delete/{idGame}")
-    public ResponseEntity<?> deleteGameById(@PathVariable("idGame") Long idGame) {
+    @DeleteMapping("/delete/{gameId}")
+    public ResponseEntity<?> deleteGameById(@PathVariable("gameId") Long gameId) {
         String usernameFromToken = SecurityContextHolder.getContext().getAuthentication().getName();
-        gameService.deleteGameById(idGame, usernameFromToken);
+        gameService.deleteGameById(gameId, usernameFromToken);
         return ResponseEntity.ok().build();
     }
 

@@ -21,9 +21,6 @@ public class RabbitMQUserProducer {
     @Value("${spring.rabbitmq.activate-account.queue}")
     private String activateAccountQueueName;
 
-    @Value("${broker.queue.email.name}")
-    private String emailQueueRoutingKey;
-
     public RabbitMQUserProducer(RabbitTemplate rabbitTemplate) {
         this.rabbitTemplate = rabbitTemplate;
     }
@@ -33,11 +30,8 @@ public class RabbitMQUserProducer {
     }
 
     public void sendResetPasswordQueue(RabbitMQResetPasswordDto resetPasswordDto) {
-        rabbitTemplate.convertAndSend(exchangeName, "reset-password", resetPasswordDto);
+        rabbitTemplate.convertAndSend(exchangeName, resetPasswordQueueName, resetPasswordDto);
     }
 
-    public void sendEmailQueue(RabbitMQActivationAccountDto activationAccountDto) {
-        rabbitTemplate.convertAndSend(exchangeName, emailQueueRoutingKey, activationAccountDto);
-    }
 }
 
