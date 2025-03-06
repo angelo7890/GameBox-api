@@ -7,7 +7,7 @@ import com.anjox.Gamebox_api.enums.UserEnum;
 import com.anjox.Gamebox_api.exeption.MessageErrorExeption;
 import com.anjox.Gamebox_api.producer.RabbitMQUserProducer;
 import com.anjox.Gamebox_api.repository.UserRepository;
-import com.anjox.Gamebox_api.util.AESEncryption;
+import com.anjox.Gamebox_api.components.AESEncryption;
 import com.anjox.Gamebox_api.util.ActivationTokenGenerator;
 import com.anjox.Gamebox_api.util.GeneratorNewPassword;
 import com.anjox.Gamebox_api.util.ValidationPassword;
@@ -29,12 +29,14 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final RabbitMQUserProducer rabbitMQUserProducer;
+    private final AESEncryption aesEncryption;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, RabbitMQUserProducer rabbitMQUserProducer) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, RabbitMQUserProducer rabbitMQUserProducer, AESEncryption aesEncryption) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.rabbitMQUserProducer = rabbitMQUserProducer;
+        this.aesEncryption = aesEncryption;
     }
 
     public void createUser (RequestRegisterUserDto dto , String usernameFromToken ){
@@ -56,7 +58,6 @@ public class UserService {
         }
         String password = passwordEncoder.encode(dto.password());
         String token = ActivationTokenGenerator.accountActivatorTokenGenerator();
-        System.out.println(token);
         RabbitMQActivationAccountDto rabbitMQActivationAccountDto = new RabbitMQActivationAccountDto(dto.username(), dto.email(), token);
         UserEntity user = new UserEntity(
                 dto.username(),
@@ -172,9 +173,8 @@ public class UserService {
             throw new MessageErrorExeption("Usuário não encontrado", HttpStatus.NOT_FOUND);
         }
         String newPassword = GeneratorNewPassword.generateNewPassword();
-        System.out.println(newPassword);
 
-        String aesPasswordEncrypted = AESEncryption.encryptPassword(newPassword);
+        String aesPasswordEncrypted = aesEncryption.encryptPassword(newPassword);
 
         String passwordEncoded = passwordEncoder.encode(newPassword);
 
