@@ -27,9 +27,8 @@ public class GameController {
     }
 
     @GetMapping("/{gameId}")
-    public ResponseEntity<ResponseGameDto> getGameById(@PathVariable("gameId") Long gameid) {
-        String usernameFromToken = SecurityContextHolder.getContext().getAuthentication().getName();
-        ResponseGameDto dto = gameService.getGameById(gameid, usernameFromToken);
+    public ResponseEntity<ResponseGameDto> getGameById(@PathVariable("gameId") Long gameId) {
+        ResponseGameDto dto = gameService.getGameById(gameId);
         return ResponseEntity.ok().body(dto);
     }
 
@@ -56,26 +55,16 @@ public class GameController {
         return ResponseEntity.ok().body(gameService.getGamesByUserId(userId , usernameFromToken , page, size));
     }
 
-    @PutMapping("/update/{gameId}")
+    @PutMapping("/{gameId}")
     public ResponseEntity<?> updateGame(@PathVariable("gameId") Long gameId, @RequestBody RequestUpdateGameDto requestUpdateGameDto) {
         String usernameFromToken = SecurityContextHolder.getContext().getAuthentication().getName();
         gameService.updateGameById(gameId, requestUpdateGameDto, usernameFromToken);
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/delete/{gameId}")
+    @DeleteMapping("/{gameId}")
     public ResponseEntity<?> deleteGameById(@PathVariable("gameId") Long gameId) {
-        String usernameFromToken = SecurityContextHolder.getContext().getAuthentication().getName();
-        gameService.deleteGameById(gameId, usernameFromToken);
+        gameService.deleteGameById(gameId);
         return ResponseEntity.ok().build();
     }
-
-    @DeleteMapping("/deleteAll/{userId}")
-    public ResponseEntity<?> deleteAllGamesByUserId(@PathVariable("userId") Long userId) {
-        String usernameFromToken = SecurityContextHolder.getContext().getAuthentication().getName();
-        gameService.deleteAllGamesByUserId(userId, usernameFromToken);
-        return ResponseEntity.ok().build();
-    }
-
-
 }

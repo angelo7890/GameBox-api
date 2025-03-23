@@ -1,4 +1,4 @@
-package com.anjox.Gamebox_api.service;
+package com.anjox.Gamebox_api.cloudinary.service;
 
 import com.anjox.Gamebox_api.dto.ResponseUrlPictureDto;
 import com.anjox.Gamebox_api.exeption.MessageErrorExeption;
@@ -20,16 +20,16 @@ public class CloudinaryService {
         this.cloudinary = cloudinary;
     }
 
-    public ResponseUrlPictureDto sendPictureFromCloud(MultipartFile picture ) {
+    public ResponseUrlPictureDto sendPictureFromCloud(MultipartFile picture) {
         try {
             File file = convertPictureToFile(picture);
             Map uploadResult = cloudinary.uploader().upload(file, ObjectUtils.emptyMap());
             String url = (String) uploadResult.get("url");
-            String imageid = (String) uploadResult.get("public_id");
+            String imageId = (String) uploadResult.get("public_id");
             file.delete();
-            return new ResponseUrlPictureDto(url, imageid);
+            return new ResponseUrlPictureDto(url, imageId);
         } catch (IOException e) {
-            throw new MessageErrorExeption("erro ao fazer upload da img", HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new MessageErrorExeption("Erro ao fazer upload da img", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -49,7 +49,7 @@ public class CloudinaryService {
             fos.close();
             return file;
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new MessageErrorExeption("Erro ao converter multipartFile para Fila", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

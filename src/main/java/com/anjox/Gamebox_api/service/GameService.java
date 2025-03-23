@@ -1,4 +1,5 @@
 package com.anjox.Gamebox_api.service;
+import com.anjox.Gamebox_api.cloudinary.service.CloudinaryService;
 import com.anjox.Gamebox_api.dto.*;
 import com.anjox.Gamebox_api.entity.GameEntity;
 import com.anjox.Gamebox_api.entity.UserEntity;
@@ -50,11 +51,9 @@ public class GameService {
         gameRepository.save(game);
     }
 
-    public ResponseGameDto getGameById(Long id , String usernameFromToken){
+    public ResponseGameDto getGameById(Long id){
         GameEntity game =  gameRepository.findByid(id);
-        UserEntity user = userRepository.findByUsername(usernameFromToken);
         if(game!=null){
-            if(game.getUserId().equals(user.getId()) || user.getType().equals(UserEnum.ADM)){
                 return new ResponseGameDto(
                         game.getId(),
                         game.getTitle(),
@@ -62,9 +61,7 @@ public class GameService {
                         game.getGenre(),
                         game.getPrice(),
                         game.getImageUrl()
-                ) ;
-            }
-            throw new MessageErrorExeption("Voce nao pode acessar as informaçoes de outra pessoa", HttpStatus.FORBIDDEN);
+                );
         }
         throw new MessageErrorExeption("game nao encontrado", HttpStatus.NOT_FOUND);
     }
@@ -157,36 +154,8 @@ public class GameService {
     }
 
     @Transactional
-    public void deleteGameById(Long id , String usernameFromToken){
-        UserEntity user = userRepository.findByUsername(usernameFromToken);
-        GameEntity game =  gameRepository.findByid(id);
-        if(game!=null){
-            if(game.getUserId().equals(user.getId()) || user.getType().equals(UserEnum.ADM)){
-                if(game.getImageId()!=null){
-                    cloudinaryService.deletePictureByIdFromCloud(game.getImageId());
-                }
-                gameRepository.delete(game);
-            }
-            throw new MessageErrorExeption("Voce nao pode apagar jogos de outra pessoa", HttpStatus.FORBIDDEN);
-        }
-        throw new MessageErrorExeption("game nao encontrado", HttpStatus.BAD_REQUEST);
-    }
-
-    @Transactional
-    public void deleteAllGamesByUserId(Long userId , String usernameFromToken){
-        UserEntity user = userRepository.findByUsername(usernameFromToken);
-        if (user.getId().equals(userId) || user.getType().equals(UserEnum.ADM)) {
-            List<GameEntity> games = gameRepository.findByUserId(userId);
-            if (games != null && !games.isEmpty()) {
-                for (GameEntity game : games) {
-                    if (game.getImageId() != null) {
-                        cloudinaryService.deletePictureByIdFromCloud(game.getImageId());
-                        gameRepository.deleteById(game.getId());
-                    }
-                }
-            }
-        }
-        throw new MessageErrorExeption("Voce no pode excluir os jogos de outra pessoa", HttpStatus.FORBIDDEN);
+    public void deleteGameById(Long id ){
+        gameRepository.deleteById(id);
     }
 
     private ResponsePaginationGameDto getResponsePaginationGameDto(Page<GameEntity> gamesByUserId) {

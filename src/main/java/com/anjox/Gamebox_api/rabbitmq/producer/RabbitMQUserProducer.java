@@ -1,4 +1,4 @@
-package com.anjox.Gamebox_api.producer;
+package com.anjox.Gamebox_api.rabbitmq.producer;
 
 
 import com.anjox.Gamebox_api.dto.RabbitMQActivationAccountDto;

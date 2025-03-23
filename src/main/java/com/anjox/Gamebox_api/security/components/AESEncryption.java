@@ -1,4 +1,4 @@
-package com.anjox.Gamebox_api.components;
+package com.anjox.Gamebox_api.security.components;
 import com.anjox.Gamebox_api.exeption.MessageErrorExeption;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
