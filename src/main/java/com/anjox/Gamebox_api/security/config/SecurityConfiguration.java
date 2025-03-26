@@ -1,10 +1,8 @@
 package com.anjox.Gamebox_api.security.config;
 
 
-import com.anjox.Gamebox_api.security.components.CustomAccessDeniedHandler;
-import com.anjox.Gamebox_api.security.components.GameRequestAuthorizationManager;
-import com.anjox.Gamebox_api.security.components.SecurityFilter;
-import com.anjox.Gamebox_api.security.components.UserRequestAuthorizationManager;
+import com.anjox.Gamebox_api.security.components.*;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -12,6 +10,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,13 +25,15 @@ public class SecurityConfiguration {
     private final UserRequestAuthorizationManager userRequestAuthorizationManager;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final GameRequestAuthorizationManager gameRequestAuthorizationManager;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
 
-    public SecurityConfiguration(SecurityFilter securityFilter, UserRequestAuthorizationManager userRequestAuthorizationManager, CustomAccessDeniedHandler customAccessDeniedHandler, GameRequestAuthorizationManager gameRequestAuthorizationManager) {
+    public SecurityConfiguration(SecurityFilter securityFilter, UserRequestAuthorizationManager userRequestAuthorizationManager, CustomAccessDeniedHandler customAccessDeniedHandler, GameRequestAuthorizationManager gameRequestAuthorizationManager, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) {
         this.securityFilter = securityFilter;
         this.userRequestAuthorizationManager = userRequestAuthorizationManager;
         this.customAccessDeniedHandler = customAccessDeniedHandler;
         this.gameRequestAuthorizationManager = gameRequestAuthorizationManager;
+        this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
     }
 
     @Bean
@@ -55,11 +56,15 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, "/api/game/**").access(this.gameRequestAuthorizationManager)
                         .requestMatchers(HttpMethod.GET, "/api/game/user/**").access(this.gameRequestAuthorizationManager)
                         .requestMatchers(HttpMethod.DELETE, "/api/game/filter/**").access(this.gameRequestAuthorizationManager)
+                        .requestMatchers(HttpMethod.POST, "/api/game").access(this.gameRequestAuthorizationManager)
+                        .requestMatchers(HttpMethod.PUT, "/api/game/update/**").access(this.gameRequestAuthorizationManager)
 
                         .anyRequest().authenticated()
                 )
+                .anonymous(AbstractHttpConfigurer::disable)
                 .exceptionHandling(exception -> exception
                         .accessDeniedHandler(this.customAccessDeniedHandler)
+                        .authenticationEntryPoint(this.customAuthenticationEntryPoint)
                 )
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

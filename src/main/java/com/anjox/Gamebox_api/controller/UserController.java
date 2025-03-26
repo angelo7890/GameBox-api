@@ -1,11 +1,13 @@
 package com.anjox.Gamebox_api.controller;
 import com.anjox.Gamebox_api.dto.*;
+import com.anjox.Gamebox_api.security.UserPrincipal;
 import com.anjox.Gamebox_api.security.service.AuthService;
 import com.anjox.Gamebox_api.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,8 +25,8 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<?> createUser (@RequestBody @Valid RequestRegisterUserDto requestRegisterUserDto) {
-        String usernameFromToken = SecurityContextHolder.getContext().getAuthentication().getName();
-        userService.createUser(requestRegisterUserDto , usernameFromToken);
+        Authentication userPrincipal = SecurityContextHolder.getContext().getAuthentication();
+        userService.createUser(requestRegisterUserDto , userPrincipal);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
@@ -36,7 +38,7 @@ public class UserController {
     @PostMapping("/refresh-token")
     public ResponseEntity<ResponseJwtTokensDto> refreshTokenJwt(){
         String usernameFromToken = SecurityContextHolder.getContext().getAuthentication().getName();
-        ResponseJwtTokensDto dto = userService.refreshTokenAccessFromRefreshToken(usernameFromToken);
+        ResponseJwtTokensDto dto = authService.refreshTokenAccessFromRefreshToken(usernameFromToken);
         return ResponseEntity.ok().body(dto);
     }
 
@@ -79,10 +81,5 @@ public class UserController {
     public ResponseEntity<?> deleteUser(@PathVariable("userId") Long userId){
         userService.deleteById(userId);
         return ResponseEntity.ok().build();
-    }
-
-    @PatchMapping()
-    public String teste(){
-        return "deu crt";
     }
 }

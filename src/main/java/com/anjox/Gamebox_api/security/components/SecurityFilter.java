@@ -41,6 +41,7 @@ public class SecurityFilter extends OncePerRequestFilter {
         if (token != null) {
 
             var login = jwtService.validateToken(token);
+            //TODO
             if (login != null) {
                 response.setStatus(HttpStatus.UNAUTHORIZED.value());
                 response.setContentType("application/json");

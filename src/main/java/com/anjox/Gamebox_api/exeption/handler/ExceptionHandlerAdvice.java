@@ -3,6 +3,7 @@ import com.anjox.Gamebox_api.exeption.MessageErrorExeption;
 import com.anjox.Gamebox_api.exeption.PasswordErrorExeption;
 import com.anjox.Gamebox_api.exeption.error.ResponseError;
 import com.anjox.Gamebox_api.exeption.error.ResponsePasswordError;
+import com.anjox.Gamebox_api.exeption.error.ResponseUnauthorizedError;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -27,5 +28,4 @@ public class ExceptionHandlerAdvice {
         ResponseError error = new ResponseError("Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR);
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
 }

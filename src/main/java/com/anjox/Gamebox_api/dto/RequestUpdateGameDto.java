@@ -1,15 +1,18 @@
 package com.anjox.Gamebox_api.dto;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+
 import java.math.BigDecimal;
 
 public record RequestUpdateGameDto(
 
-        String title,
+        @NotEmpty String title,
 
-        String description,
+        @NotEmpty String description,
 
-        String genre,
+        @NotEmpty String genre,
 
-        BigDecimal price
+        @NotNull BigDecimal price
 
 ) {
 }
