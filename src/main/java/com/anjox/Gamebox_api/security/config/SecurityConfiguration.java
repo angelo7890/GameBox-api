@@ -44,18 +44,18 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.POST, "/api/user/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/user/register").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/picture/upload").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/user/refresh-password").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/user/verify").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/user/findAll").permitAll()
-                        .requestMatchers(HttpMethod.PATCH, "/api/user").permitAll()
-                        .requestMatchers(HttpMethod.DELETE, "/api/picture/delete/{id}").permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/api/user/**").access(this.userRequestAuthorizationManager)
-                        .requestMatchers(HttpMethod.GET, "/api/user/**").access(this.userRequestAuthorizationManager)
-                        .requestMatchers(HttpMethod.DELETE, "/api/user/**").access(this.userRequestAuthorizationManager)
+
+                        .requestMatchers(HttpMethod.PUT, "/api/user/{userId}").access(this.userRequestAuthorizationManager)
+                        .requestMatchers(HttpMethod.GET, "/api/user/{userId}").access(this.userRequestAuthorizationManager)
+                        .requestMatchers(HttpMethod.DELETE, "/api/user/{userId}").access(this.userRequestAuthorizationManager)
+
                         .requestMatchers(HttpMethod.GET, "/api/game/**").access(this.gameRequestAuthorizationManager)
                         .requestMatchers(HttpMethod.GET, "/api/game/user/**").access(this.gameRequestAuthorizationManager)
-                        .requestMatchers(HttpMethod.DELETE, "/api/game/filter/**").access(this.gameRequestAuthorizationManager)
+                        .requestMatchers(HttpMethod.GET, "/api/game/filter/**").access(this.gameRequestAuthorizationManager)
+                        .requestMatchers(HttpMethod.DELETE,"api/game/delete/**").access(this.gameRequestAuthorizationManager)
                         .requestMatchers(HttpMethod.POST, "/api/game").access(this.gameRequestAuthorizationManager)
                         .requestMatchers(HttpMethod.PUT, "/api/game/update/**").access(this.gameRequestAuthorizationManager)
 

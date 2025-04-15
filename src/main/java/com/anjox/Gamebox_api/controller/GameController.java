@@ -5,7 +5,6 @@ import com.anjox.Gamebox_api.dto.*;
 import com.anjox.Gamebox_api.service.GameService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,8 +16,9 @@ public class GameController {
         this.gameService = gameService;
     }
 
-    @PostMapping()
+    @PostMapping("/create")
     public ResponseEntity<?> createGame( @Valid @RequestBody RequestCreateGameDto requestCreateGameDto) {
+        System.out.println(requestCreateGameDto);
         gameService.createGame(requestCreateGameDto);
         return ResponseEntity.ok().build();
     }
@@ -62,7 +62,7 @@ public class GameController {
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/{gameId}")
+    @DeleteMapping("/delete/{gameId}")
     public ResponseEntity<?> deleteGameById(@PathVariable("gameId") Long gameId) {
         gameService.deleteGameById(gameId);
         return ResponseEntity.ok().build();

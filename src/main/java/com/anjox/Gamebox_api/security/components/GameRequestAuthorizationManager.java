@@ -10,12 +10,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.UriTemplate;
 
 import java.io.IOException;
@@ -29,12 +29,11 @@ public class GameRequestAuthorizationManager implements AuthorizationManager<Req
     private final Logger logger = LoggerFactory.getLogger(GameRequestAuthorizationManager.class);
 
     private static final UriTemplate CREATE_GAME_URI_TEMPLATE = new UriTemplate("/api/game");
-    private static final UriTemplate GAME_URI_TEMPLATE = new UriTemplate("/api/game/{gameId}");
+    private static final UriTemplate DELETE_GAME_URI_TEMPLATE = new UriTemplate("/api/game/delete/{gameId}");
     private static final UriTemplate USER_GAMES_URI_TEMPLATE = new UriTemplate("/api/game/user/{userId}");
     private static final UriTemplate FILTER_GAMES_URI_TEMPLATE = new UriTemplate("/api/game/filter/{userId}/{genre}");
     private static final UriTemplate UPDATE_GAMES_URI_TEMPLATE = new UriTemplate("/api/game/update/{gameId}");
     private static final UriTemplate UPDATE_PICTURE_URI_TEMPLATE = new UriTemplate("/api/game/update/picture/{gameId}");
-
     private static final String ROLE_ADMIN = "ROLE_ADMIN";
 
     private final GameRepository gameRepository;
@@ -63,8 +62,9 @@ public class GameRequestAuthorizationManager implements AuthorizationManager<Req
 
         String requestUri = context.getRequest().getRequestURI();
 
-        if (GAME_URI_TEMPLATE.matches(requestUri)) {
-            return handleGameUri(user, isAdmin, requestUri);
+        if (DELETE_GAME_URI_TEMPLATE.matches(requestUri)) {
+            Map<String, String> uriVariables = DELETE_GAME_URI_TEMPLATE.match(requestUri);
+            return handleGameUri(user, isAdmin, uriVariables);
         }
 
         if (USER_GAMES_URI_TEMPLATE.matches(requestUri)) {
@@ -82,11 +82,13 @@ public class GameRequestAuthorizationManager implements AuthorizationManager<Req
         }
 
         if(UPDATE_GAMES_URI_TEMPLATE.matches(requestUri)) {
-           return handleGameUri(user, isAdmin, requestUri);
+            Map<String, String> uriVariables = UPDATE_GAMES_URI_TEMPLATE.match(requestUri);
+           return handleGameUri(user, isAdmin, uriVariables);
         }
 
         if(UPDATE_PICTURE_URI_TEMPLATE.matches(requestUri)) {
-             return handleGameUri(user, isAdmin, requestUri);
+            Map<String, String> uriVariables = UPDATE_PICTURE_URI_TEMPLATE.match(requestUri);
+             return handleGameUri(user, isAdmin, uriVariables);
         }
 
         logger.warn("Requisição negada, pois o usuário não é admin ou está buscando informações de outro usuário");
@@ -104,9 +106,13 @@ public class GameRequestAuthorizationManager implements AuthorizationManager<Req
         return new AuthorizationDecision(isAdmin || isOwner);
     }
 
-    private AuthorizationDecision handleGameUri(UserPrincipal user, boolean isAdmin, String requestUri) {
-        Map<String, String> uriVariables = GAME_URI_TEMPLATE.match(requestUri);
+    private AuthorizationDecision handleGameUri(UserPrincipal user, boolean isAdmin, Map<String, String> uriVariables) {
+        ///o erro esta aqui
+        ///tem que pegar cada uri de acorodo com a uri que esta vindo
+        /// ent tem que tirar esse map daqui e colocar nos if de acordo com cada uri para dar certo
         String gameIdFromRequestUri = uriVariables.get("gameId");
+
+        logger.info("Game ID: " + gameIdFromRequestUri);
 
         if (gameIdFromRequestUri == null) {
             return new AuthorizationDecision(false);
@@ -125,8 +131,19 @@ public class GameRequestAuthorizationManager implements AuthorizationManager<Req
         HttpServletRequest request = context.getRequest();
 
         try {
-            Map<String, Object> requestBody = objectMapper.readValue(request.getInputStream(), Map.class);
-            Long userIdFromRequest = ((Number) requestBody.get("userId")).longValue();
+            ContentCachingRequestWrapper wrappedRequest = new ContentCachingRequestWrapper(request);
+
+            //essa praga so funciona assim...
+            wrappedRequest.getReader().lines().forEach(line -> {});
+
+            byte[] content = wrappedRequest.getContentAsByteArray();
+            if (content.length == 0) {
+                logger.error("Corpo da requisição está vazio.");
+                return new AuthorizationDecision(false);
+            }
+
+            Map<String, Object> bodyMap = objectMapper.readValue(content, Map.class);
+            Long userIdFromRequest = ((Number) bodyMap.get("userId")).longValue();
 
             boolean isOwner = userIdFromRequest.equals(user.getId());
 

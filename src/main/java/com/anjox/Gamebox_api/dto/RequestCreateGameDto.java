@@ -11,15 +11,12 @@ public record RequestCreateGameDto(
         @NotNull(message = "O userId não pode ser nulo")
         Long userId,
 
-        @NotNull(message = "O título não pode ser nulo")
         @NotEmpty(message = "O título não pode estar vazio")
         String title,
 
-        @NotNull(message = "A descrição não pode ser nula")
         @NotEmpty(message = "A descrição não pode estar vazia")
         String description,
 
-        @NotNull(message = "O gênero não pode ser nulo")
         @NotEmpty(message = "O gênero não pode estar vazio")
         String genre,
 

@@ -44,6 +44,7 @@ public class UserRequestAuthorizationManager implements AuthorizationManager<Req
         logger.info("Iniciando verificaçao se o user buscado é o mesmo da autenticaçao");
 
         boolean userIdsMatch = userIdFromRequestUri != null && userIdFromRequestUri.equals(id);
+        logger.info("teste: "+userIdsMatch);
 
         boolean hasAdminRole = auth.getAuthorities().stream()
                 .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(ROLE_ADMIN));

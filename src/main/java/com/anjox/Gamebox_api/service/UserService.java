@@ -76,7 +76,7 @@ public class UserService {
                 password,
                 dto.type(),
                 token,
-                false
+                true
         );
         logger.info("salvando");
         userRepository.save(user);

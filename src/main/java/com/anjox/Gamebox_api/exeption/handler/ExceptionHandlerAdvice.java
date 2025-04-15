@@ -23,9 +23,9 @@ public class ExceptionHandlerAdvice {
         return new ResponseEntity<>(error, exception.getStatus());
     }
 
-    @ExceptionHandler(Exception.class)
-    ResponseEntity<ResponseError> handleException(Exception exception) {
-        ResponseError error = new ResponseError("Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR);
-        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    //@ExceptionHandler(Exception.class)
+    //ResponseEntity<ResponseError> handleException(Exception exception) {
+       // ResponseError error = new ResponseError("Internal Server Error...", HttpStatus.INTERNAL_SERVER_ERROR);
+        //return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    //}
 }

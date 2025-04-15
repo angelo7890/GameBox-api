@@ -1,7 +1,7 @@
 package com.anjox.Gamebox_api.security.components;
 
 
-import com.anjox.Gamebox_api.exeption.error.ResponseError;
+import com.anjox.Gamebox_api.exeption.error.ResponseAccessDeniedHandlerError;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -28,11 +28,11 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
 
-        ResponseError responseError = new ResponseError(
+        ResponseAccessDeniedHandlerError error = new ResponseAccessDeniedHandlerError(
                 "Acesso negado. Você não tem permissão para acessar este recurso.",
                 HttpStatus.FORBIDDEN
         );
 
-        response.getWriter().write(objectMapper.writeValueAsString(responseError));
+        response.getWriter().write(objectMapper.writeValueAsString(error));
     }
 }
